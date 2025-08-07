@@ -16,8 +16,7 @@ uploaded_file = st.file_uploader(
 
 model_choice = st.selectbox("Choose analysis model", [
     "Simple Count Analysis", 
-    "Hierarchical Bayesian (HB) Analysis",
-    "TURF Analysis"
+    "Hierarchical Bayesian (HB) Analysis"
 ])
 
 if uploaded_file and st.button("Run Analysis"):
@@ -137,6 +136,7 @@ if uploaded_file and st.button("Run Analysis"):
             st.download_button("Download Results (CSV)", csv, file_name="hb_analysis_results.csv")
 
     
+
 
 
 
