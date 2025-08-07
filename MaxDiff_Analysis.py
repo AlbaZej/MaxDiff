@@ -136,53 +136,72 @@ if uploaded_file and st.button("Run Analysis"):
             csv = summary_df.to_csv(index=False)
             st.download_button("Download Results (CSV)", csv, file_name="hb_analysis_results.csv")
 
-    elif model_choice == "TURF Analysis":
+   elif model_choice == "TURF Analysis":
         st.subheader("Results: TURF Analysis")
-        
+    
+        # Let user select combination size
         turf_size = st.slider("Select number of features in TURF combination", 1, 10, 8)
-
+    
+        # Get all attribute columns by excluding "Response ID"
         attribute_cols = [col for col in df.columns if col != "Response ID"]
-        missing_cols = [col for col in attribute_cols if col not in df.columns]
-        if missing_cols:
-            st.error(f"Missing expected attribute columns in dataset: {', '.join(missing_cols)}")
+        if not attribute_cols:
+            st.error("No attribute columns found. Make sure your dataset has at least one attribute column.")
             st.stop()
+    
+        # Flatten all attribute values to get the unique list
         all_attributes = pd.unique(df[attribute_cols].values.ravel())
-
+        all_attributes = [attr for attr in all_attributes if pd.notna(attr)]
         all_attributes.sort()
-        
+    
+        if len(all_attributes) < turf_size:
+            st.error(f"Only {len(all_attributes)} unique attributes found, which is less than the selected TURF size ({turf_size}).")
+            st.stop()
+    
+        # Get unique respondents
         respondents = df["Response ID"].unique()
+    
+        # Build binary matrix: 1 if feature shown for respondent, else 0
         binary_matrix = pd.DataFrame(0, index=respondents, columns=all_attributes)
-
+    
         for _, row in df.iterrows():
             respondent = row["Response ID"]
-            attrs = row[attribute_cols].values
-            for attr in attrs:
-                binary_matrix.loc[respondent, attr] = 1
-
-        binary_matrix = binary_matrix.reset_index(drop=True)
-
+            for attr in row[attribute_cols]:
+                if pd.notna(attr):
+                    binary_matrix.loc[respondent, attr] = 1
+    
+        binary_matrix.reset_index(drop=True, inplace=True)
+    
+        # Helper: Calculate reach (number of respondents reached by any selected feature)
         from itertools import combinations
-
-        def calculate_reach(binary_df, selected_attrs):
-            row_reach = binary_df[selected_attrs].max(axis=1)
-            return row_reach.sum()
-
-        all_combos = list(combinations(all_attributes, turf_size))
+    
+        def calculate_reach(df_bin, selected_attrs):
+            return df_bin[selected_attrs].max(axis=1).sum()
+    
+        # Compute TURF for all combinations of selected size
+        from time import time
+        st.info(f"Calculating TURF for {len(list(combinations(all_attributes, turf_size)))} combinations...")
+        start_time = time()
+    
         turf_results = []
-
-        for combo in all_combos:
-            reach = calculate_reach(binary_matrix, list(combo))
+        for combo in combinations(all_attributes, turf_size):
+            reach = calculate_reach(binary_matrix, combo)
             turf_results.append({
                 "Combination": ", ".join(combo),
                 "Reach Count": int(reach),
                 "Reach (%)": round((reach / len(binary_matrix)) * 100, 1)
             })
-
+    
+        duration = time() - start_time
+        st.success(f"TURF calculation completed in {round(duration, 2)} seconds.")
+    
+        # Display results
         turf_df = pd.DataFrame(turf_results).sort_values(by="Reach Count", ascending=False).reset_index(drop=True)
-
         st.dataframe(turf_df, use_container_width=True)
-
+    
+        # Export to CSV
         csv = turf_df.to_csv(index=False)
         st.download_button("Download TURF Results (CSV)", csv, file_name="turf_analysis_results.csv")
+
+
 
 
