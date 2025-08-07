@@ -131,7 +131,7 @@ if uploaded_file and st.button("Run Analysis"):
             st.dataframe(summary_df, use_container_width=True)
 
             csv = summary_df.to_csv(index=False)
-            st.download_button("Download Results (CSV)", csv, file_name="hb_analysis_results.csv")
+            #st.download_button("Download Results (CSV)", csv, file_name="hb_analysis_results.csv")
 
             # --- Individual-Level Utility Matrix for Excel ---
             utilities_samples = trace.posterior["utilities"].mean(dim=("chain", "draw")).values
@@ -147,6 +147,7 @@ if uploaded_file and st.button("Run Analysis"):
             st.download_button("Download HB Utilities Dataset (CSV)", util_csv, file_name="hb_utilities_matrix.csv")
 
     
+
 
 
 
