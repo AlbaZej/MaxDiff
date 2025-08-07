@@ -136,7 +136,7 @@ if uploaded_file and st.button("Run Analysis"):
             csv = summary_df.to_csv(index=False)
             st.download_button("Download Results (CSV)", csv, file_name="hb_analysis_results.csv")
 
-   elif model_choice == "TURF Analysis":
+    elif model_choice == "TURF Analysis":
         st.subheader("Results: TURF Analysis")
     
         # Let user select combination size
@@ -201,6 +201,7 @@ if uploaded_file and st.button("Run Analysis"):
         # Export to CSV
         csv = turf_df.to_csv(index=False)
         st.download_button("Download TURF Results (CSV)", csv, file_name="turf_analysis_results.csv")
+
 
 
 
