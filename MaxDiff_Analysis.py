@@ -75,7 +75,7 @@ if uploaded_file and st.button("Run Analysis"):
         csv = results_df.to_csv(index=False)
         st.download_button("Download Results (CSV)", csv, file_name="simple_count_analysis_results.csv")
 
-    elif model_choice == "Hierarchical Bayesian (HB) Analysis":
+        elif model_choice == "Hierarchical Bayesian (HB) Analysis":
         st.subheader("Results: Hierarchical Bayesian (HB) Analysis")
 
         attribute_cols = [f"Attribute {i}" for i in range(1, 6)]
@@ -122,20 +122,32 @@ if uploaded_file and st.button("Run Analysis"):
             summary_df.index = [f"mu[{i}]" for i in range(len(summary_df))]
             summary_df["Attribute"] = [attributes[i] for i in range(len(attributes))]
             summary_df = summary_df.reset_index(drop=True)
-            
-            # Calculate Relative Importance (0–100)
+
+            # Relative Importance
             min_util = summary_df["mean"].min()
             max_util = summary_df["mean"].max()
             summary_df["Relative Importance (0–100)"] = ((summary_df["mean"] - min_util) / (max_util - min_util) * 100).round(1)
-
-            # Sort by importance descending
             summary_df = summary_df.sort_values(by="Relative Importance (0–100)", ascending=False)
             st.dataframe(summary_df, use_container_width=True)
 
             csv = summary_df.to_csv(index=False)
             st.download_button("Download Results (CSV)", csv, file_name="hb_analysis_results.csv")
 
+            # --- Individual-Level Utility Matrix for Excel ---
+            utilities_samples = trace.posterior["utilities"].mean(dim=("chain", "draw")).values
+            utilities_matrix = pd.DataFrame(
+                utilities_samples,
+                columns=attributes,
+                index=respondents
+            )
+            utilities_matrix.index.name = "Response ID"
+
+            # Download individual utilities
+            util_csv = utilities_matrix.reset_index().to_csv(index=False)
+            st.download_button("Download HB Utilities Dataset (CSV)", util_csv, file_name="hb_utilities_matrix.csv")
+
     
+
 
 
 
