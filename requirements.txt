@@ -1,0 +1,12 @@
+streamlit
+pymc
+arviz
+pandas
+requests
+Pillow
+python-docx
+openpyxl
+docx2python
+google-auth
+gspread
+regex
