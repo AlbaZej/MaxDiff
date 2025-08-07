@@ -16,7 +16,8 @@ uploaded_file = st.file_uploader(
 
 model_choice = st.selectbox("Choose analysis model", [
     "Simple Count Analysis", 
-    "Hierarchical Bayesian (HB) Analysis"
+    "Hierarchical Bayesian (HB) Analysis",
+    "TURF Analysis"
 ])
 
 if uploaded_file and st.button("Run Analysis"):
@@ -98,6 +99,7 @@ if uploaded_file and st.button("Run Analysis"):
 
         if not pairwise_data:
             st.error("No valid pairwise data found for HB model.")
+
         else:
             respondents = sorted(set(respondent_ids))
             respondent_map = {resp: i for i, resp in enumerate(respondents)}
@@ -133,3 +135,47 @@ if uploaded_file and st.button("Run Analysis"):
 
             csv = summary_df.to_csv(index=False)
             st.download_button("Download Results (CSV)", csv, file_name="hb_analysis_results.csv")
+
+    elif model_choice == "TURF Analysis":
+        st.subheader("Results: TURF Analysis")
+        
+        turf_size = st.slider("Select number of features in TURF combination", 1, 10, 8)
+
+        attribute_cols = [f"Attribute {i}" for i in range(1, 6)]
+        all_attributes = pd.unique(df[attribute_cols].values.ravel())
+        all_attributes.sort()
+        
+        respondents = df["Response ID"].unique()
+        binary_matrix = pd.DataFrame(0, index=respondents, columns=all_attributes)
+
+        for _, row in df.iterrows():
+            respondent = row["Response ID"]
+            attrs = row[attribute_cols].values
+            for attr in attrs:
+                binary_matrix.loc[respondent, attr] = 1
+
+        binary_matrix = binary_matrix.reset_index(drop=True)
+
+        from itertools import combinations
+
+        def calculate_reach(binary_df, selected_attrs):
+            row_reach = binary_df[selected_attrs].max(axis=1)
+            return row_reach.sum()
+
+        all_combos = list(combinations(all_attributes, turf_size))
+        turf_results = []
+
+        for combo in all_combos:
+            reach = calculate_reach(binary_matrix, list(combo))
+            turf_results.append({
+                "Combination": ", ".join(combo),
+                "Reach Count": int(reach),
+                "Reach (%)": round((reach / len(binary_matrix)) * 100, 1)
+            })
+
+        turf_df = pd.DataFrame(turf_results).sort_values(by="Reach Count", ascending=False).reset_index(drop=True)
+
+        st.dataframe(turf_df, use_container_width=True)
+
+        csv = turf_df.to_csv(index=False)
+        st.download_button("Download TURF Results (CSV)", csv, file_name="turf_analysis_results.csv")
