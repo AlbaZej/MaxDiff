@@ -142,7 +142,12 @@ if uploaded_file and st.button("Run Analysis"):
         turf_size = st.slider("Select number of features in TURF combination", 1, 10, 8)
 
         attribute_cols = [f"Attribute {i}" for i in range(1, 6)]
+        missing_cols = [col for col in attribute_cols if col not in df.columns]
+        if missing_cols:
+            st.error(f"Missing expected attribute columns in dataset: {', '.join(missing_cols)}")
+            st.stop()
         all_attributes = pd.unique(df[attribute_cols].values.ravel())
+
         all_attributes.sort()
         
         respondents = df["Response ID"].unique()
@@ -179,3 +184,4 @@ if uploaded_file and st.button("Run Analysis"):
 
         csv = turf_df.to_csv(index=False)
         st.download_button("Download TURF Results (CSV)", csv, file_name="turf_analysis_results.csv")
+
