@@ -136,53 +136,7 @@ if uploaded_file and st.button("Run Analysis"):
             csv = summary_df.to_csv(index=False)
             st.download_button("Download Results (CSV)", csv, file_name="hb_analysis_results.csv")
 
-    elif model_choice == "TURF Analysis":
-        st.subheader("Results: TURF Analysis")
-           
-        # Merr atributet (gjithçka përveç Response ID)
-        if "Response ID" not in df.columns:
-            st.error("Column 'Response ID' is missing from the uploaded file.")
-            st.stop()
     
-        attribute_cols = [col for col in df.columns if col != "Response ID"]
-        
-        # Verifikim që dataseti është binar
-        if not set(df[attribute_cols].stack().unique()).issubset({0, 1}):
-            st.warning("Some values in the attribute columns are not 0 or 1. Please upload a binary dataset.")
-            st.stop()
-    
-        all_attributes = attribute_cols
-        all_attributes.sort()
-    
-        # Krijo matrix binar (me Response ID si index)
-        binary_matrix = df.set_index("Response ID").astype(int)
-    
-        from itertools import combinations
-    
-        # Llogarit reach për kombinime të veçorive
-        def calculate_reach(binary_df, selected_attrs):
-            row_reach = binary_df[selected_attrs].max(axis=1)
-            return row_reach.sum()
-    
-        all_combos = list(combinations(all_attributes, 10))
-        turf_results = []
-    
-        for combo in all_combos:
-            reach = calculate_reach(binary_matrix, list(combo))
-            turf_results.append({
-                "Combination": ", ".join(combo),
-                "Reach Count": int(reach),
-                "Reach (%)": round((reach / len(binary_matrix)) * 100, 1)
-            })
-    
-        # Rendit nga më i larti
-        turf_df = pd.DataFrame(turf_results).sort_values(by="Reach Count", ascending=False).reset_index(drop=True)
-    
-        st.dataframe(turf_df, use_container_width=True)
-    
-        csv = turf_df.to_csv(index=False)
-        st.download_button("Download TURF Results (CSV)", csv, file_name="turf_analysis_results.csv")
-
 
 
 
