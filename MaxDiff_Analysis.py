@@ -75,7 +75,7 @@ if uploaded_file and st.button("Run Analysis"):
         csv = results_df.to_csv(index=False)
         st.download_button("Download Results (CSV)", csv, file_name="simple_count_analysis_results.csv")
 
-        elif model_choice == "Hierarchical Bayesian (HB) Analysis":
+    elif model_choice == "Hierarchical Bayesian (HB) Analysis":
         st.subheader("Results: Hierarchical Bayesian (HB) Analysis")
 
         attribute_cols = [f"Attribute {i}" for i in range(1, 6)]
@@ -147,6 +147,7 @@ if uploaded_file and st.button("Run Analysis"):
             st.download_button("Download HB Utilities Dataset (CSV)", util_csv, file_name="hb_utilities_matrix.csv")
 
     
+
 
 
 
