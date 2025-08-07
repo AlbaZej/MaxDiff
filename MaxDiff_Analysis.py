@@ -138,69 +138,54 @@ if uploaded_file and st.button("Run Analysis"):
 
     elif model_choice == "TURF Analysis":
         st.subheader("Results: TURF Analysis")
-    
-        # Let user select combination size
+        
+        # Slider për madhësinë e kombinimit
         turf_size = st.slider("Select number of features in TURF combination", 1, 10, 8)
     
-        # Get all attribute columns by excluding "Response ID"
-        attribute_cols = [col for col in df.columns if col != "Response ID"]
-        if not attribute_cols:
-            st.error("No attribute columns found. Make sure your dataset has at least one attribute column.")
+        # Merr atributet (gjithçka përveç Response ID)
+        if "Response ID" not in df.columns:
+            st.error("Column 'Response ID' is missing from the uploaded file.")
             st.stop()
     
-        # Flatten all attribute values to get the unique list
-        all_attributes = pd.unique(df[attribute_cols].values.ravel())
-        all_attributes = [attr for attr in all_attributes if pd.notna(attr)]
+        attribute_cols = [col for col in df.columns if col != "Response ID"]
+        
+        # Verifikim që dataseti është binar
+        if not set(df[attribute_cols].stack().unique()).issubset({0, 1}):
+            st.warning("Some values in the attribute columns are not 0 or 1. Please upload a binary dataset.")
+            st.stop()
+    
+        all_attributes = attribute_cols
         all_attributes.sort()
     
-        if len(all_attributes) < turf_size:
-            st.error(f"Only {len(all_attributes)} unique attributes found, which is less than the selected TURF size ({turf_size}).")
-            st.stop()
+        # Krijo matrix binar (me Response ID si index)
+        binary_matrix = df.set_index("Response ID").astype(int)
     
-        # Get unique respondents
-        respondents = df["Response ID"].unique()
-    
-        # Build binary matrix: 1 if feature shown for respondent, else 0
-        binary_matrix = pd.DataFrame(0, index=respondents, columns=all_attributes)
-    
-        for _, row in df.iterrows():
-            respondent = row["Response ID"]
-            for attr in row[attribute_cols]:
-                if pd.notna(attr):
-                    binary_matrix.loc[respondent, attr] = 1
-    
-        binary_matrix.reset_index(drop=True, inplace=True)
-    
-        # Helper: Calculate reach (number of respondents reached by any selected feature)
         from itertools import combinations
     
-        def calculate_reach(df_bin, selected_attrs):
-            return df_bin[selected_attrs].max(axis=1).sum()
+        # Llogarit reach për kombinime të veçorive
+        def calculate_reach(binary_df, selected_attrs):
+            row_reach = binary_df[selected_attrs].max(axis=1)
+            return row_reach.sum()
     
-        # Compute TURF for all combinations of selected size
-        from time import time
-        st.info(f"Calculating TURF for {len(list(combinations(all_attributes, turf_size)))} combinations...")
-        start_time = time()
-    
+        all_combos = list(combinations(all_attributes, turf_size))
         turf_results = []
-        for combo in combinations(all_attributes, turf_size):
-            reach = calculate_reach(binary_matrix, combo)
+    
+        for combo in all_combos:
+            reach = calculate_reach(binary_matrix, list(combo))
             turf_results.append({
                 "Combination": ", ".join(combo),
                 "Reach Count": int(reach),
                 "Reach (%)": round((reach / len(binary_matrix)) * 100, 1)
             })
     
-        duration = time() - start_time
-        st.success(f"TURF calculation completed in {round(duration, 2)} seconds.")
-    
-        # Display results
+        # Rendit nga më i larti
         turf_df = pd.DataFrame(turf_results).sort_values(by="Reach Count", ascending=False).reset_index(drop=True)
+    
         st.dataframe(turf_df, use_container_width=True)
     
-        # Export to CSV
         csv = turf_df.to_csv(index=False)
         st.download_button("Download TURF Results (CSV)", csv, file_name="turf_analysis_results.csv")
+
 
 
 
