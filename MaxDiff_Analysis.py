@@ -138,10 +138,7 @@ if uploaded_file and st.button("Run Analysis"):
 
     elif model_choice == "TURF Analysis":
         st.subheader("Results: TURF Analysis")
-        
-        # Slider për madhësinë e kombinimit
-        turf_size = st.slider("Select number of features in TURF combination", 1, 10, 8)
-    
+           
         # Merr atributet (gjithçka përveç Response ID)
         if "Response ID" not in df.columns:
             st.error("Column 'Response ID' is missing from the uploaded file.")
@@ -167,7 +164,7 @@ if uploaded_file and st.button("Run Analysis"):
             row_reach = binary_df[selected_attrs].max(axis=1)
             return row_reach.sum()
     
-        all_combos = list(combinations(all_attributes, turf_size))
+        all_combos = list(combinations(all_attributes, 10))
         turf_results = []
     
         for combo in all_combos:
@@ -185,6 +182,7 @@ if uploaded_file and st.button("Run Analysis"):
     
         csv = turf_df.to_csv(index=False)
         st.download_button("Download TURF Results (CSV)", csv, file_name="turf_analysis_results.csv")
+
 
 
 
